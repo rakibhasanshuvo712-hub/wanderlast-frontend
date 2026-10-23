@@ -40,6 +40,7 @@ export default function AddDestination() {
       if (!res.ok) throw new Error(`Server responded ${res.status}`)
       const data = await res.json()
       console.log("Add Travel Package:", data)
+      alert("Travel package added successfully!")
     } catch (err) {
       console.error("Failed to add travel package:", err)
       alert("Failed to add travel package. Please try again.")
