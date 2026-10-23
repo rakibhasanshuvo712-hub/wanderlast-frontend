@@ -25,12 +25,29 @@ export default function AddDestination() {
     description: "",
   })
 
+  const [loading, setLoading] = useState(false)
+
   const handleChange = (key: string, value: string) => {
     setFormData((prev) => ({ ...prev, [key]: value }))
   }
 
+  const handleCancel = () => {
+    setFormData({
+      name: "Bali Paradise",
+      country: "Indonesia",
+      category: "Beach",
+      price: "",
+      duration: "",
+      departureDate: "",
+      imageUrl: "https://example.com/image.jpg",
+      description: "",
+    })
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (loading) return
+    setLoading(true)
     try {
       const res = await fetch("/api/app-destination", {
         method: "POST",
@@ -44,6 +61,8 @@ export default function AddDestination() {
     } catch (err) {
       console.error("Failed to add travel package:", err)
       alert("Failed to add travel package. Please try again.")
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -154,11 +173,11 @@ export default function AddDestination() {
           </div>
 
           <div className="flex items-center justify-end gap-3 pt-4">
-            <Button type="button" variant="outline" className="border-destructive text-destructive">
+            <Button type="button" variant="outline" className="border-destructive text-destructive" onClick={handleCancel} disabled={loading}>
               Cancel
             </Button>
-            <Button type="submit" variant="default" className="bg-primary text-primary-foreground">
-              Add Travel Package
+            <Button type="submit" variant="default" className="bg-primary text-primary-foreground" disabled={loading}>
+              {loading ? "Adding..." : "Add Travel Package"}
             </Button>
           </div>
         </form>
