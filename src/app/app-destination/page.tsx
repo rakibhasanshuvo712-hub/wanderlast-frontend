@@ -29,9 +29,21 @@ export default function AddDestination() {
     setFormData((prev) => ({ ...prev, [key]: value }))
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    console.log("Add Travel Package:", formData)
+    try {
+      const res = await fetch("http://localhost:8000/app-destination", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      })
+      if (!res.ok) throw new Error(`Server responded ${res.status}`)
+      const data = await res.json()
+      console.log("Add Travel Package:", data)
+    } catch (err) {
+      console.error("Failed to add travel package:", err)
+      alert("Failed to add travel package. Please try again.")
+    }
   }
 
   return (
