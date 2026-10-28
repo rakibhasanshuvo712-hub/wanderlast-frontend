@@ -3,8 +3,10 @@
 import * as React from "react"
 import { cn } from "cn"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { authClient } from "@/lib/auth-client"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { LogOut, User } from "lucide-react"
 
 function NavLink({
   href,
@@ -30,8 +32,15 @@ export function Navbar({
   className,
   ...props
 }: React.ComponentProps<"nav"> & { className?: string }) {
-  const { data: session } = authClient.useSession()
+  const router = useRouter()
+  const { data: session, isPending } = authClient.useSession()
   const user = session?.user
+
+  const handleSignOut = async () => {
+    await authClient.signOut()
+    router.push("/")
+    router.refresh()
+  }
 
   return (
     <nav
@@ -63,21 +72,33 @@ export function Navbar({
           {/* Center: Brand logo */}
           <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2">
             <span className="self-center text-xl font-bold tracking-tighter text-white italic">
-              Wanderlast
+              Wanderlust
             </span>
           </div>
 
-          {/* Right: Auth links */}
-          <div className="hidden items-center gap-6 lg:flex">
-            {user ? (
+          {/* Right: Auth */}
+          <div className="hidden items-center gap-4 lg:flex">
+            {isPending ? (
+              <span className="text-sm text-white/60">…</span>
+            ) : user ? (
               <>
-                <NavLink href="/profile" className="text-sm">
-                  Profile
+                <NavLink href="/profile" className="flex items-center gap-2 text-sm">
+                  <Avatar className="h-7 w-7">
+                    <AvatarImage src={user.image ?? undefined} alt={user.name ?? "Account"} />
+                    <AvatarFallback>
+                      {user.name?.charAt(0)?.toUpperCase() ?? <User className="h-4 w-4" />}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="max-w-[10rem] truncate">{user.name}</span>
                 </NavLink>
-                <Avatar>
-                  <AvatarImage src={user.image ?? undefined} alt={user.name} />
-                  <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
-                </Avatar>
+                <button
+                  type="button"
+                  onClick={handleSignOut}
+                  className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium bg-white/10 hover:bg-white/20 transition-colors"
+                >
+                  <LogOut className="h-4 w-4" />
+                  Sign out
+                </button>
               </>
             ) : (
               <>

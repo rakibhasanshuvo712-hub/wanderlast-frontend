@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { apiUrl } from "@/lib/api-server";
+import { getCurrentUser } from "@/lib/auth-session";
 import DeleteDestination from "@/components/deleteDestination";
 
 import { BookNowButton } from "@/components/book-now-button";
@@ -118,6 +119,7 @@ export async function DestinationDetailsPage({
   const data = result.data;
   const highlights = data.highlights ?? [];
   const exclusions = data.exclusions ?? [];
+  const user = await getCurrentUser();
 
   return (
     <div className="min-h-[60vh] bg-background">
@@ -273,7 +275,28 @@ export async function DestinationDetailsPage({
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-5">
-                <BookNowButton destinationId={data._id} />
+                {user ? (
+                  <BookNowButton
+                    destinationId={data._id}
+                    destinationName={data.name}
+                    destinationImage={data.imageUrl}
+                    price={data.price}
+                    departureDate={data.departureDate}
+                    callbackPath={`/destinations/${data._id}`}
+                  />
+                ) : (
+                  <div className="space-y-2">
+                    <Link
+                      href={`/login?callbackUrl=${encodeURIComponent(`/destinations/${data._id}`)}`}
+                      className={`${buttonVariants({ variant: "default" })} w-full bg-cyan-600 text-white hover:bg-cyan-700`}
+                    >
+                      Sign in to book
+                    </Link>
+                    <p className="text-center text-sm text-muted-foreground">
+                      You need an account to book this trip.
+                    </p>
+                  </div>
+                )}
 
                 <Link
                   href={`/app-destination/${data._id}`}

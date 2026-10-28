@@ -23,24 +23,40 @@ import React from "react"
 
 export default function SignUp() {
     const router = useRouter()
+    const [error, setError] = React.useState<string | null>(null)
+    const [loading, setLoading] = React.useState(false)
+
     const handleEmailSignUP = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
+        if (loading) return
+
         const formData = new FormData(e.currentTarget)
-        const user = Object.fromEntries(formData.entries()) as {
-            name: string
-            image: string
-            email: string
-            password: string
-        }
-        const { data, error } = await authClient.signUp.email({
-            ...user,
+        const name = String(formData.get("name") ?? "").trim()
+        const email = String(formData.get("email") ?? "").trim()
+        const password = String(formData.get("password") ?? "")
+        const image = String(formData.get("image") ?? "").trim()
+
+        setLoading(true)
+        setError(null)
+
+        const { error: signUpError } = await authClient.signUp.email({
+            name,
+            email,
+            password,
+            // Only send an image when one was provided — the field is optional.
+            ...(image ? { image } : {}),
         })
-        if (data) {
-            router.push('/')
+
+        setLoading(false)
+
+        if (signUpError) {
+            // Surface the real reason instead of failing silently in the console.
+            setError(signUpError.message ?? "Could not create your account")
+            return
         }
-        if (error) {
-            console.log(error)
-        }
+
+        router.push("/")
+        router.refresh()
     }
   return (
     <div className="flex flex-col gap-6">
@@ -98,13 +114,12 @@ export default function SignUp() {
                 />
               </Field>
               <Field>
-                <FieldLabel htmlFor="image">ImageURL</FieldLabel>
+                <FieldLabel htmlFor="image">ImageURL (optional)</FieldLabel>
                 <Input
                   id="image"
                   type="url"
                   name="image"
                   placeholder="Image URL"
-                  required
                 />
               </Field>
               <Field>
@@ -120,7 +135,14 @@ export default function SignUp() {
                 <Input id="password" name="password" type="password" required />
               </Field>
               <Field>
-                <Button type="submit">SignUp</Button>
+                <Button type="submit" disabled={loading}>
+                  {loading ? "Creating account…" : "SignUp"}
+                </Button>
+                {error && (
+                  <p className="text-sm text-rose-500" role="alert">
+                    {error}
+                  </p>
+                )}
                 <FieldDescription className="text-center">
                   Already have an account? <Link href="/login">Log in</Link>
                 </FieldDescription>

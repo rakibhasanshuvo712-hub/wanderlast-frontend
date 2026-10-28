@@ -3,8 +3,10 @@
 import * as React from "react"
 import { cn } from "cn"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { MenuIcon, UserIcon, XIcon } from "lucide-react"
+import { usePathname, useRouter } from "next/navigation"
+import { LogOutIcon, MenuIcon, UserIcon, XIcon } from "lucide-react"
+import { authClient } from "@/lib/auth-client"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 interface NavLinkItem {
   href: string
@@ -19,11 +21,12 @@ const navLinks: NavLinkItem[] = [
   { href: "/admin", label: "Admin" },
 ]
 
-const authLinks: NavLinkItem[] = [
-  { href: "/profile", label: "Profile", icon: true },
+const guestLinks: NavLinkItem[] = [
   { href: "/login", label: "Login" },
   { href: "/signup", label: "Sign Up" },
 ]
+
+const memberLinks: NavLinkItem[] = [{ href: "/profile", label: "Profile", icon: true }]
 
 function NavLink({
   href,
@@ -64,9 +67,20 @@ export function Navbar({
 }: React.ComponentProps<"nav"> & { className?: string }) {
   const [open, setOpen] = React.useState(false)
   const pathname = usePathname()
+  const router = useRouter()
+  const { data: session, isPending } = authClient.useSession()
+  const user = session?.user
+  const accountLinks = user ? memberLinks : guestLinks
   const close = () => setOpen(false)
   const isActive = (href: string) =>
     href === "/" ? pathname === "/" : pathname.startsWith(href)
+
+  const handleSignOut = async () => {
+    close()
+    await authClient.signOut()
+    router.push("/")
+    router.refresh()
+  }
 
   return (
     <nav
@@ -103,7 +117,7 @@ export function Navbar({
 
           {/* Right: account links */}
           <div className="hidden items-center justify-end gap-1 lg:flex">
-            {authLinks.map((link) => (
+            {accountLinks.map((link) => (
               <NavLink
                 key={link.href}
                 href={link.href}
@@ -118,6 +132,40 @@ export function Navbar({
                 {link.label}
               </NavLink>
             ))}
+
+            {!isPending && user && (
+              <>
+                <Link
+                  href="/profile"
+                  onClick={close}
+                  aria-label="Open profile"
+                  className="ml-1 inline-flex items-center gap-2 rounded-md px-2 py-1.5 transition-colors hover:bg-muted"
+                >
+                  <Avatar className="h-7 w-7">
+                    <AvatarImage
+                      src={user.image ?? undefined}
+                      alt={user.name ?? "Account"}
+                    />
+                    <AvatarFallback>
+                      {user.name?.charAt(0)?.toUpperCase() ?? (
+                        <UserIcon className="h-4 w-4" />
+                      )}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="max-w-[9rem] truncate text-sm font-medium text-foreground">
+                    {user.name}
+                  </span>
+                </Link>
+                <button
+                  type="button"
+                  onClick={handleSignOut}
+                  className="inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium text-foreground/80 transition-colors hover:bg-muted hover:text-foreground"
+                >
+                  <LogOutIcon className="h-4 w-4" />
+                  Sign out
+                </button>
+              </>
+            )}
           </div>
 
           {/* Mobile toggle */}
@@ -135,7 +183,7 @@ export function Navbar({
         {/* Mobile menu */}
         {open && (
           <div className="flex flex-col gap-1 border-t border-border py-3 lg:hidden">
-            {[...navLinks, ...authLinks].map((link) => (
+            {[...navLinks, ...accountLinks].map((link) => (
               <NavLink
                 key={link.href}
                 href={link.href}
@@ -149,6 +197,16 @@ export function Navbar({
                 {link.label}
               </NavLink>
             ))}
+            {!isPending && user && (
+              <button
+                type="button"
+                onClick={handleSignOut}
+                className="inline-flex items-center gap-2 rounded-md px-3 py-2.5 text-left text-sm font-medium text-foreground/80 transition-colors hover:bg-muted hover:text-foreground"
+              >
+                <LogOutIcon className="h-4 w-4" />
+                Sign out
+              </button>
+            )}
           </div>
         )}
       </div>

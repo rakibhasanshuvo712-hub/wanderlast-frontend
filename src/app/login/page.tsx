@@ -21,6 +21,18 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import React from "react"
 
+/**
+ * Only allow same-site, absolute-path redirects after login (e.g.
+ * /destinations/6543...) so a crafted ?callbackUrl= can't bounce users to an
+ * external site.
+ */
+function safeCallbackPath(): string {
+  const raw = new URLSearchParams(window.location.search).get("callbackUrl")
+  if (!raw) return "/"
+  if (!raw.startsWith("/") || raw.startsWith("//")) return "/"
+  return raw
+}
+
 export default function Login() {
   const router = useRouter()
 
@@ -37,7 +49,8 @@ export default function Login() {
     })
 
     if (data) {
-      router.push("/")
+      router.push(safeCallbackPath())
+      router.refresh()
     }
     if (error) {
       console.log(error)

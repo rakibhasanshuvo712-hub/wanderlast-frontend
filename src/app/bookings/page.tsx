@@ -14,40 +14,83 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { API_BASE } from "@/lib/api"
+import { authClient } from "@/lib/auth-client"
 
 interface Booking {
   _id: string
   destinationId: string
-  name: string
+  /** Snapshot of the trip taken when it was booked. */
+  destinationName: string
+  destinationImage?: string
   country?: string
   price?: string
   duration?: string
   departureDate?: string
-  imageUrl?: string
   bookedAt?: string
 }
 
+function SignInCard() {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-lg">Sign in to see your bookings</CardTitle>
+        <CardDescription>
+          Your bookings are tied to your account, so sign in to view the trips
+          you&apos;ve booked.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Link
+          href="/login?callbackUrl=/bookings"
+          className={`${buttonVariants({ variant: "default" })} mt-2`}
+        >
+          Sign in
+        </Link>
+      </CardContent>
+    </Card>
+  )
+}
+
 export default function BookingsPage() {
+  const { data: session, isPending } = authClient.useSession()
+  const user = session?.user
+
   const [bookings, setBookings] = React.useState<Booking[]>([])
-  const [loading, setLoading] = React.useState(true)
+  const [loadedFor, setLoadedFor] = React.useState<string | null>(null)
   const [failed, setFailed] = React.useState(false)
   const [cancellingId, setCancellingId] = React.useState<string | null>(null)
 
   React.useEffect(() => {
-    fetch(`${API_BASE}/bookings`)
+    if (!user?.id) return
+
+    const controller = new AbortController()
+    const userId = user.id
+    const params = new URLSearchParams({ userId })
+    if (user.email) params.set("email", user.email)
+
+    fetch(`${API_BASE}/bookings?${params.toString()}`, {
+      signal: controller.signal,
+    })
       .then((res) => {
         if (!res.ok) throw new Error(`Server responded ${res.status}`)
         return res.json()
       })
       .then((data) => {
         setBookings(Array.isArray(data) ? data : [])
-        setLoading(false)
+        setFailed(false)
+        setLoadedFor(userId)
       })
-      .catch(() => {
+      .catch((err) => {
+        if (err instanceof DOMException && err.name === "AbortError") return
         setFailed(true)
-        setLoading(false)
+        setLoadedFor(userId)
       })
-  }, [])
+
+    return () => controller.abort()
+  }, [user?.id, user?.email])
+
+  // Still loading until the fetch for the signed-in user settles.
+  const loading = !isPending && !!user && loadedFor !== user.id
 
   const handleCancel = async (id: string) => {
     if (cancellingId) return
@@ -67,6 +110,8 @@ export default function BookingsPage() {
     }
   }
 
+  const showEmpty = !!user && !loading && !failed && bookings.length === 0
+
   return (
     <div className="min-h-[60vh] bg-background">
       <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6 lg:px-8">
@@ -74,15 +119,23 @@ export default function BookingsPage() {
           My Bookings
         </h1>
         <p className="mt-2 text-muted-foreground">
-          Trips you&apos;ve booked, all in one place.
+          {user?.name
+            ? `Trips ${user.name} has booked, all in one place.`
+            : "Trips you've booked, all in one place."}
         </p>
 
         <div className="mt-8">
+          {isPending && (
+            <p className="text-sm text-muted-foreground">Checking session…</p>
+          )}
+
+          {!isPending && !user && <SignInCard />}
+
           {loading && (
             <p className="text-sm text-muted-foreground">Loading bookings…</p>
           )}
 
-          {failed && !loading && (
+          {failed && (
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg">
@@ -96,7 +149,7 @@ export default function BookingsPage() {
             </Card>
           )}
 
-          {!loading && !failed && bookings.length === 0 && (
+          {showEmpty && !failed && (
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg">No bookings yet</CardTitle>
@@ -122,10 +175,10 @@ export default function BookingsPage() {
                   <Card>
                     <CardContent className="flex flex-col gap-5 p-5 sm:flex-row sm:items-center">
                       <div className="relative h-32 w-full shrink-0 overflow-hidden rounded-lg sm:w-48">
-                        {booking.imageUrl && (
+                        {booking.destinationImage && (
                           <Image
-                            src={booking.imageUrl}
-                            alt={booking.name}
+                            src={booking.destinationImage}
+                            alt={booking.destinationName}
                             fill
                             sizes="(max-width: 640px) 100vw, 192px"
                             className="object-cover"
@@ -136,7 +189,7 @@ export default function BookingsPage() {
                       <div className="min-w-0 flex-1 space-y-2">
                         <div className="flex flex-wrap items-center gap-2">
                           <h2 className="truncate text-lg font-semibold text-foreground">
-                            {booking.name}
+                            {booking.destinationName}
                           </h2>
                           <Badge variant="outline">Booked</Badge>
                         </div>
