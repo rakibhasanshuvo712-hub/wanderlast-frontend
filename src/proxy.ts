@@ -1,0 +1,24 @@
+import { NextResponse, type NextRequest } from 'next/server'
+import { auth } from '@/lib/auth'
+import { headers } from "next/headers";
+import { User } from 'lucide-react';
+
+// This function can be marked `async` if using `await` inside
+export async function proxy(request: NextRequest) {
+    const session = await auth.api.getSession({
+        headers: request.headers
+    })
+    const user=session?.user
+    console.log(user);
+    if (!user){
+    return NextResponse.redirect(new URL('/login',request.url ))
+    }
+
+}
+
+// Alternatively, you can use a default export:
+// export default function proxy(request: NextRequest) { ... }
+
+export const config = {
+  matcher: ['/app-destination','/bookings','/destinations/:path'],
+}
