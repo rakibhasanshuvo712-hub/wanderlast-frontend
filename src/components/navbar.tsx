@@ -17,6 +17,7 @@ interface NavLinkItem {
 const navLinks: NavLinkItem[] = [
   { href: "/", label: "Home" },
   { href: "/destinations", label: "Destinations" },
+  { href: "/app-destination", label: "Add Destination" },
   { href: "/bookings", label: "My Bookings" },
   { href: "/admin", label: "Admin" },
 ]
