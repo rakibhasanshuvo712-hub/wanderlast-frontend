@@ -23,6 +23,13 @@ const DeleteDestination = ({ id }: { id: string }) => {
       const res = await fetch(`${API_BASE}/destinations/${id}`, {
         method: "DELETE",
       })
+      if (res.status === 401) {
+        // Session expired — send the user to login and back here.
+        router.push(
+          `/login?callbackUrl=${encodeURIComponent(window.location.pathname)}`
+        )
+        return
+      }
       if (!res.ok) {
         throw new Error(`Server responded ${res.status}`)
       }
@@ -30,7 +37,7 @@ const DeleteDestination = ({ id }: { id: string }) => {
       router.refresh()
     } catch (err) {
       console.error("Failed to delete destination:", err)
-      window.alert("Could not delete this destination. Is the backend server running?")
+      window.alert("Could not delete this destination. Please try again.")
     }
   }
     return (
@@ -43,8 +50,8 @@ const DeleteDestination = ({ id }: { id: string }) => {
     <AlertDialogHeader>
       <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
       <AlertDialogDescription>
-        This action cannot be undone. This will permanently delete your account
-        from our servers.
+        This action cannot be undone. This will permanently delete this
+        destination from the listings.
       </AlertDialogDescription>
     </AlertDialogHeader>
     <AlertDialogFooter>

@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
 import { DestinationForm } from "@/components/destination-form";
 import { buttonVariants } from "@/components/ui/button";
 import { apiUrl } from "@/lib/api-server";
+import { getCurrentUser } from "@/lib/auth-session";
 
 export const metadata: Metadata = {
   title: "Edit travel package",
@@ -16,6 +17,11 @@ interface EditPageProps {
 
 export default async function EditDestinationPage({ params }: EditPageProps) {
   const { id } = await params;
+
+  const user = await getCurrentUser();
+  if (!user) {
+    redirect(`/login?callbackUrl=${encodeURIComponent(`/app-destination/${id}`)}`);
+  }
 
   let doc: Record<string, unknown> | null = null;
   let unavailable = false;

@@ -6,14 +6,16 @@ import { ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { authClient } from "@/lib/auth-client"
+import { API_BASE } from "@/lib/api"
 
 /**
- * Where bookings are written. Defaults to the Express server from the project
- * backend (POST /booking). Override with NEXT_PUBLIC_BOOKING_API_URL if the
- * booking endpoint lives somewhere else.
+ * Where bookings are written. Defaults to this app's own session-backed API
+ * route (`/api/bookings`), so the signed-in user is read from the cookie
+ * instead of trusting ids sent by the client. Override with
+ * NEXT_PUBLIC_BOOKING_API_URL if bookings live on another host.
  */
 const BOOKING_ENDPOINT =
-  process.env.NEXT_PUBLIC_BOOKING_API_URL ?? "http://localhost:8000/booking"
+  process.env.NEXT_PUBLIC_BOOKING_API_URL ?? `${API_BASE}/bookings`
 
 export function BookNowButton({
   destinationId,

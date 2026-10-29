@@ -19,7 +19,6 @@ const navLinks: NavLinkItem[] = [
   { href: "/destinations", label: "Destinations" },
   { href: "/app-destination", label: "Add Destination" },
   { href: "/bookings", label: "My Bookings" },
-  { href: "/admin", label: "Admin" },
 ]
 
 const guestLinks: NavLinkItem[] = [

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { ObjectId } from "mongodb"
 import { getCollection } from "@/lib/mongodb"
+import { getCurrentUser } from "@/lib/auth-session"
 
 const editableFields = [
   "name",
@@ -50,6 +51,15 @@ export async function GET(_request: Request, { params }: Params) {
 
 async function updateDestination(request: Request, id: string) {
   if (!ObjectId.isValid(id)) return invalidId()
+
+  const user = await getCurrentUser()
+
+  if (!user) {
+    return NextResponse.json(
+      { success: false, message: "Sign in to edit a travel package" },
+      { status: 401 }
+    )
+  }
 
   try {
     const body = await request.json()
@@ -113,6 +123,15 @@ export async function DELETE(_request: Request, { params }: Params) {
   const { id } = await params
 
   if (!ObjectId.isValid(id)) return invalidId()
+
+  const user = await getCurrentUser()
+
+  if (!user) {
+    return NextResponse.json(
+      { success: false, message: "Sign in to delete a travel package" },
+      { status: 401 }
+    )
+  }
 
   try {
     const collection = await getCollection("destination")

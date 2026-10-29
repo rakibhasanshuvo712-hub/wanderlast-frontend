@@ -1,24 +1,26 @@
-import { NextResponse, type NextRequest } from 'next/server'
-import { auth } from '@/lib/auth'
-import { headers } from "next/headers";
-import { User } from 'lucide-react';
+import { NextResponse, type NextRequest } from "next/server"
+import { auth } from "@/lib/auth"
 
-// This function can be marked `async` if using `await` inside
+/**
+ * Guards the pages that create or edit travel packages. Browsing
+ * destinations, booking and the bookings list stay public — the API routes
+ * (e.g. /api/app-destination, /api/destinations/:id) do their own session
+ * checks and return 401 JSON, so only the HTML pages are redirected here.
+ */
 export async function proxy(request: NextRequest) {
-    const session = await auth.api.getSession({
-        headers: request.headers
-    })
-    const user=session?.user
-    console.log(user);
-    if (!user){
-    return NextResponse.redirect(new URL('/login',request.url ))
-    }
+  const session = await auth.api.getSession({
+    headers: request.headers,
+  })
 
+  if (session?.user) {
+    return NextResponse.next()
+  }
+
+  const loginUrl = new URL("/login", request.url)
+  loginUrl.searchParams.set("callbackUrl", request.nextUrl.pathname)
+  return NextResponse.redirect(loginUrl)
 }
 
-// Alternatively, you can use a default export:
-// export default function proxy(request: NextRequest) { ... }
-
 export const config = {
-  matcher: ['/app-destination','/bookings','/destinations/:path'],
+  matcher: ["/app-destination/:path*"],
 }

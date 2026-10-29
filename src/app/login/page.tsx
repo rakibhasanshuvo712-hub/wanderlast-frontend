@@ -35,26 +35,35 @@ function safeCallbackPath(): string {
 
 export default function Login() {
   const router = useRouter()
+  const [error, setError] = React.useState<string | null>(null)
+  const [loading, setLoading] = React.useState(false)
 
   const handleEmailLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
+    if (loading) return
+
     const formData = new FormData(e.currentTarget)
     const credentials = Object.fromEntries(formData.entries()) as {
       email: string
       password: string
     }
 
-    const { data, error } = await authClient.signIn.email({
+    setLoading(true)
+    setError(null)
+
+    const { error: signInError } = await authClient.signIn.email({
       ...credentials,
     })
 
-    if (data) {
-      router.push(safeCallbackPath())
-      router.refresh()
+    setLoading(false)
+
+    if (signInError) {
+      setError(signInError.message ?? "Incorrect email or password")
+      return
     }
-    if (error) {
-      console.log(error)
-    }
+
+    router.push(safeCallbackPath())
+    router.refresh()
   }
 
   return (
@@ -115,7 +124,14 @@ export default function Login() {
                 <Input id="password" name="password" type="password" required />
               </Field>
               <Field>
-                <Button type="submit">Login</Button>
+                <Button type="submit" disabled={loading}>
+                  {loading ? "Logging in..." : "Login"}
+                </Button>
+                {error && (
+                  <p className="text-sm text-rose-500" role="alert">
+                    {error}
+                  </p>
+                )}
                 <FieldDescription className="text-center">
                   Don&apos;t have an account?{" "}
                   <Link href="/signup">Sign up</Link>

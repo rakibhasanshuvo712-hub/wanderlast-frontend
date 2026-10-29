@@ -133,22 +133,24 @@ export async function DestinationDetailsPage({
             <ArrowLeft className="h-4 w-4" />
             Back to Destinations
           </Link>
-          <div className="flex items-center gap-2">
-            <Link
-              href={`/app-destination/${data._id}`}
-              className={buttonVariants({ variant: "outline", size: "sm" })}
-            >
-              <Pencil className="h-4 w-4 mr-2" />
-              Edit
-            </Link>
-            <Link
-              href="/app-destination"
-              className={buttonVariants({ variant: "outline", size: "sm" })}
-            >
-              Add new
-            </Link>
-            <DeleteDestination id={data._id} />
-          </div>
+          {user && (
+            <div className="flex items-center gap-2">
+              <Link
+                href={`/app-destination/${data._id}`}
+                className={buttonVariants({ variant: "outline", size: "sm" })}
+              >
+                <Pencil className="h-4 w-4 mr-2" />
+                Edit
+              </Link>
+              <Link
+                href="/app-destination"
+                className={buttonVariants({ variant: "outline", size: "sm" })}
+              >
+                Add new
+              </Link>
+              <DeleteDestination id={data._id} />
+            </div>
+          )}
         </div>
       </div>
 
@@ -298,12 +300,14 @@ export async function DestinationDetailsPage({
                   </div>
                 )}
 
-                <Link
-                  href={`/app-destination/${data._id}`}
-                  className={`${buttonVariants({ variant: "outline" })} w-full`}
-                >
-                  Edit this package
-                </Link>
+                {user && (
+                  <Link
+                    href={`/app-destination/${data._id}`}
+                    className={`${buttonVariants({ variant: "outline" })} w-full`}
+                  >
+                    Edit this package
+                  </Link>
+                )}
 
                 <Separator />
 

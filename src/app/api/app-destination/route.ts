@@ -1,7 +1,17 @@
 import { NextResponse } from "next/server"
 import { getCollection } from "@/lib/mongodb"
+import { getCurrentUser } from "@/lib/auth-session"
 
 export async function POST(request: Request) {
+  const user = await getCurrentUser()
+
+  if (!user) {
+    return NextResponse.json(
+      { success: false, message: "Sign in to add a travel package" },
+      { status: 401 }
+    )
+  }
+
   try {
     const body = await request.json()
 
@@ -26,6 +36,7 @@ export async function POST(request: Request) {
       reviews: typeof body.reviews === "number" ? body.reviews : 0,
       highlights: Array.isArray(body.highlights) ? body.highlights : [],
       exclusions: Array.isArray(body.exclusions) ? body.exclusions : [],
+      createdBy: { id: user.id, name: user.name, email: user.email },
     }
 
     const collection = await getCollection("destination")

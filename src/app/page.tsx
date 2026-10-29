@@ -2,13 +2,14 @@ import Image from "next/image"
 import Link from "next/link"
 import { Hero } from "@/components/hero"
 import { SearchBar } from "@/components/SearchBar"
+import { Featured } from "@/components/featured"
 
 export default function Home() {
   return (
     <div className="min-h-screen flex flex-col">
       <Hero />
       <SearchBar />
-
+      <Featured />
       <section className="py-16 bg-background">
         <div className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">

@@ -1,11 +1,19 @@
 import type { Metadata } from "next"
+import { redirect } from "next/navigation"
 import { DestinationForm } from "@/components/destination-form"
+import { getCurrentUser } from "@/lib/auth-session"
 
 export const metadata: Metadata = {
   title: "Add a travel package",
 }
 
-export default function AddDestination() {
+export default async function AddDestination() {
+  const user = await getCurrentUser()
+
+  if (!user) {
+    redirect(`/login?callbackUrl=${encodeURIComponent("/app-destination")}`)
+  }
+
   return (
     <div className="min-h-[60vh] flex items-center justify-center bg-background px-4 py-12">
       <div className="max-w-2xl w-full">

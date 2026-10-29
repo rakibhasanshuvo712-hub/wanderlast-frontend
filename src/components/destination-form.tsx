@@ -78,6 +78,14 @@ export function DestinationForm({
 
       const data = await response.json().catch(() => null)
 
+      if (response.status === 401) {
+        // Session expired — send the user to login and back to this page.
+        router.push(
+          `/login?callbackUrl=${encodeURIComponent(window.location.pathname)}`
+        )
+        return
+      }
+
       if (!response.ok) {
         throw new Error(data?.message ?? "Something went wrong")
       }
