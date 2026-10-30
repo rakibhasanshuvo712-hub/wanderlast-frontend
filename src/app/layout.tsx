@@ -17,7 +17,11 @@ export const metadata: Metadata = {
     "Discover hand-picked travel destinations, compare prices and durations, and book the trip that fits your story.",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html
       lang="en"

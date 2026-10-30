@@ -13,7 +13,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { API_BASE } from "@/lib/api"
 import { authClient } from "@/lib/auth-client"
 
 interface Booking {
@@ -65,26 +64,25 @@ export default function BookingsPage() {
 
     const controller = new AbortController()
     const userId = user.id
-    const params = new URLSearchParams({ userId })
-    if (user.email) params.set("email", user.email)
 
-    fetch(`${API_BASE}/bookings?${params.toString()}`, {
-      signal: controller.signal,
-    })
-      .then((res) => {
+    const loadBookings = async () => {
+      try {
+        const res = await fetch("/api/bookings", {
+          signal: controller.signal,
+        })
         if (!res.ok) throw new Error(`Server responded ${res.status}`)
-        return res.json()
-      })
-      .then((data) => {
+        const data = await res.json()
         setBookings(Array.isArray(data) ? data : [])
         setFailed(false)
         setLoadedFor(userId)
-      })
-      .catch((err) => {
+      } catch (err) {
         if (err instanceof DOMException && err.name === "AbortError") return
         setFailed(true)
         setLoadedFor(userId)
-      })
+      }
+    }
+
+    loadBookings()
 
     return () => controller.abort()
   }, [user?.id, user?.email])
@@ -97,7 +95,10 @@ export default function BookingsPage() {
     setCancellingId(id)
 
     try {
-      const res = await fetch(`${API_BASE}/bookings/${id}`, {
+      // The backend has no booking-delete route yet, so cancelling still goes
+      // through this app's own session-backed handler. Switch it to
+      // `${process.env.NEXT_PUBLIC_API_URL}/booking/:id` once that route exists.
+      const res = await fetch(`/api/bookings/${id}`, {
         method: "DELETE",
       })
       if (!res.ok) throw new Error(`Server responded ${res.status}`)

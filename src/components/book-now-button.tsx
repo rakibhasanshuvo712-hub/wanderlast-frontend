@@ -6,22 +6,20 @@ import { ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { authClient } from "@/lib/auth-client"
-import { API_BASE } from "@/lib/api"
 
 /**
  * Where bookings are written. Defaults to this app's own session-backed API
  * route (`/api/bookings`), so the signed-in user is read from the cookie
- * instead of trusting ids sent by the client. Override with
- * NEXT_PUBLIC_BOOKING_API_URL if bookings live on another host.
+ * instead of trusting ids sent by the client, and the trip details are
+ * snapshotted from the destination document on the server. The My Bookings
+ * page reads from this same route, so writes and reads always agree on the
+ * shape of a booking.
  */
 const BOOKING_ENDPOINT =
-  process.env.NEXT_PUBLIC_BOOKING_API_URL ?? `${API_BASE}/bookings`
+  process.env.NEXT_PUBLIC_BOOKING_API_URL ?? "/api/bookings"
 
 export function BookNowButton({
   destinationId,
-  destinationName,
-  destinationImage,
-  price,
   departureDate,
   callbackPath,
 }: {
@@ -59,16 +57,11 @@ export function BookNowButton({
     setLoading(true)
     setError(null)
 
-    // Field names must match what the bookings collection and the My Bookings
-    // page read back: userId/userName/userEmail + a snapshot of the trip.
+    // The API route reads the signed-in user from the session cookie and
+    // snapshots the trip from the destination document, so only the trip
+    // itself has to be sent from here.
     const payload = {
-      userId: user.id,
-      userName: user.name,
-      userEmail: user.email,
       destinationId,
-      destinationName: destinationName ?? "Trip",
-      destinationImage: destinationImage ?? "",
-      price: price ?? "",
       departureDate: date,
     }
 

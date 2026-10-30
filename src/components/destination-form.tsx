@@ -14,7 +14,13 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
-import { API_BASE } from "@/lib/api"
+import { getTokenFromClient } from "@/lib/getTokenFromClient"
+import { authClient } from "@/lib/auth-client"
+import {
+  CREATE_DESTINATION_PATH,
+  destinationPaths,
+  fetchFromApi,
+} from "@/lib/api"
 
 export interface DestinationInput {
   name: string
@@ -47,6 +53,8 @@ export function DestinationForm({
 }) {
   const editing = Boolean(id)
   const router = useRouter()
+  const { data: session } = authClient.useSession()
+  const signedIn = Boolean(session?.user)
 
   const [formData, setFormData] = useState<DestinationInput>({
     ...emptyValues,
@@ -67,11 +75,16 @@ export function DestinationForm({
     setError(null)
 
     try {
-      const response = await fetch(
-        editing ? `${API_BASE}/destinations/${id}` : `${API_BASE}/app-destination`,
+      const token = await getTokenFromClient()
+
+      const response = await fetchFromApi(
+        editing ? destinationPaths(id) : [CREATE_DESTINATION_PATH],
         {
           method: editing ? "PATCH" : "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { authorization: `Bearer ${token}` } : {}),
+          },
           body: JSON.stringify(formData),
         }
       )
@@ -79,6 +92,18 @@ export function DestinationForm({
       const data = await response.json().catch(() => null)
 
       if (response.status === 401) {
+        setLoading(false)
+
+        if (signedIn) {
+          // The session is fine on this side — sending the user back to the
+          // login screen would just bounce them straight back here.
+          setError(
+            data?.message ??
+              "Your session was rejected by the server. Sign out and sign in again, then retry."
+          )
+          return
+        }
+
         // Session expired — send the user to login and back to this page.
         router.push(
           `/login?callbackUrl=${encodeURIComponent(window.location.pathname)}`

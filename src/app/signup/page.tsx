@@ -21,10 +21,31 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import React from "react"
 
+/**
+ * Same rule as on the login page: only same-site, absolute-path redirects
+ * (e.g. /app-destination) so a crafted ?callbackUrl= can't bounce users to an
+ * external site.
+ */
+function safeCallbackPath(): string {
+    const raw = new URLSearchParams(window.location.search).get("callbackUrl")
+    if (!raw) return "/"
+    if (!raw.startsWith("/") || raw.startsWith("//")) return "/"
+    return raw
+}
+
 export default function SignUp() {
     const router = useRouter()
     const [error, setError] = React.useState<string | null>(null)
     const [loading, setLoading] = React.useState(false)
+    const { data: session, isPending } = authClient.useSession()
+    const signedIn = !isPending && Boolean(session?.user)
+
+    // Already signed in: no point showing a sign-up form again — go straight
+    // to where the user was headed (e.g. back to /app-destination).
+    React.useEffect(() => {
+        if (!signedIn) return
+        router.replace(safeCallbackPath())
+    }, [signedIn, router])
 
     const handleEmailSignUP = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
@@ -55,9 +76,24 @@ export default function SignUp() {
             return
         }
 
-        router.push("/")
+        // Return to the page that sent the user here (profile, add destination,
+        // …) instead of always dumping them on the home page.
+        router.push(safeCallbackPath())
         router.refresh()
     }
+  if (signedIn) {
+    return (
+      <div className="flex flex-col gap-6">
+        <Card>
+          <CardHeader className="text-center">
+            <CardTitle className="text-xl">Signed in</CardTitle>
+            <CardDescription>Taking you back to where you were…</CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+    )
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <Card>

@@ -1,7 +1,9 @@
 'use client'
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { API_BASE } from "@/lib/api"
+import { getTokenFromClient } from "@/lib/getTokenFromClient"
+import { authClient } from "@/lib/auth-client"
+import { destinationPaths, fetchFromApi } from "@/lib/api"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,13 +19,25 @@ import React from 'react';
 
 const DeleteDestination = ({ id }: { id: string }) => {
    const router = useRouter()
+   const { data: session } = authClient.useSession()
+   const signedIn = Boolean(session?.user)
 
   const handleDeleteDestination = async () => {
     try {
-      const res = await fetch(`${API_BASE}/destinations/${id}`, {
+      const token = await getTokenFromClient()
+      const res = await fetchFromApi(destinationPaths(id), {
         method: "DELETE",
+        headers: token ? { authorization: `Bearer ${token}` } : undefined,
       })
       if (res.status === 401) {
+        // A signed-in user must not be bounced back to the login screen —
+        // that only starts the whole cycle over again.
+        if (signedIn) {
+          window.alert(
+            "Your session was rejected by the server. Sign out and sign in again, then retry."
+          )
+          return
+        }
         // Session expired — send the user to login and back here.
         router.push(
           `/login?callbackUrl=${encodeURIComponent(window.location.pathname)}`

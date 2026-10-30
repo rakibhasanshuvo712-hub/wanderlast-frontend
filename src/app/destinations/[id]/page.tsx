@@ -3,7 +3,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { apiUrl } from "@/lib/api-server";
+import { getTokenFromServer } from "@/lib/getTokenFromServer";
+import { destinationPaths } from "@/lib/api";
+import { fetchFromApiServer } from "@/lib/api-server";
 import { getCurrentUser } from "@/lib/auth-session";
 import DeleteDestination from "@/components/deleteDestination";
 
@@ -56,8 +58,11 @@ type LoadResult =
 
 async function loadDestination(id: string): Promise<LoadResult> {
   try {
-    const res = await fetch(await apiUrl(`/destinations/${id}`), {
+    const token = await getTokenFromServer();
+
+    const res = await fetchFromApiServer(destinationPaths(id), {
       cache: "no-store",
+      headers: token ? { authorization: `Bearer ${token}` } : undefined,
     });
 
     if (res.status === 400 || res.status === 404) {

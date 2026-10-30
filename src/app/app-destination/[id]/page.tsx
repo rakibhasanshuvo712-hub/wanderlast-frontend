@@ -4,7 +4,9 @@ import { notFound, redirect } from "next/navigation";
 
 import { DestinationForm } from "@/components/destination-form";
 import { buttonVariants } from "@/components/ui/button";
-import { apiUrl } from "@/lib/api-server";
+import { getTokenFromServer } from "@/lib/getTokenFromServer"
+import { destinationPaths } from "@/lib/api";
+import { fetchFromApiServer } from "@/lib/api-server";
 import { getCurrentUser } from "@/lib/auth-session";
 
 export const metadata: Metadata = {
@@ -28,8 +30,11 @@ export default async function EditDestinationPage({ params }: EditPageProps) {
   let missing = false;
 
   try {
-    const res = await fetch(await apiUrl(`/destinations/${id}`), {
+    const token = await getTokenFromServer();
+
+    const res = await fetchFromApiServer(destinationPaths(id), {
       cache: "no-store",
+      headers: token ? { authorization: `Bearer ${token}` } : undefined,
     });
 
     if (res.status === 400 || res.status === 404) {

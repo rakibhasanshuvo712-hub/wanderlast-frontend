@@ -33,10 +33,52 @@ function safeCallbackPath(): string {
   return raw
 }
 
+/** Same validation as above, but returns the /signup link that keeps it. */
+function readSignUpHref(): string {
+  const raw = new URLSearchParams(window.location.search).get("callbackUrl")
+  if (!raw || !raw.startsWith("/") || raw.startsWith("//")) return "/signup"
+  return `/signup?callbackUrl=${encodeURIComponent(raw)}`
+}
+
+/** The query string never changes while this page is on screen. */
+const subscribeToSearch = () => () => {}
+
 export default function Login() {
   const router = useRouter()
   const [error, setError] = React.useState<string | null>(null)
   const [loading, setLoading] = React.useState(false)
+  const { data: session, isPending } = authClient.useSession()
+  const signedIn = !isPending && Boolean(session?.user)
+
+  // Where the "Sign up" link should land after the account is created — the
+  // login page was handed this by the page that redirected here (e.g.
+  // /app-destination), and dropping it would send people back to the home
+  // page instead of the form they came for.
+  const signUpHref = React.useSyncExternalStore(
+    subscribeToSearch,
+    readSignUpHref,
+    () => "/signup"
+  )
+
+  // Already signed in: don't ask for credentials a second time, just continue
+  // to where the user was headed before the login screen interrupted them.
+  React.useEffect(() => {
+    if (!signedIn) return
+    router.replace(safeCallbackPath())
+  }, [signedIn, router])
+
+  if (signedIn) {
+    return (
+      <div className="flex flex-col gap-6">
+        <Card>
+          <CardHeader className="text-center">
+            <CardTitle className="text-xl">Signed in</CardTitle>
+            <CardDescription>Taking you back to where you were…</CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+    )
+  }
 
   const handleEmailLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -134,7 +176,7 @@ export default function Login() {
                 )}
                 <FieldDescription className="text-center">
                   Don&apos;t have an account?{" "}
-                  <Link href="/signup">Sign up</Link>
+                  <Link href={signUpHref}>Sign up</Link>
                 </FieldDescription>
               </Field>
             </FieldGroup>
